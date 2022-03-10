@@ -1,0 +1,42 @@
+heat_template_version: 2018-08-31
+
+parameters:
+  flavor-db:
+    type: string
+    description: Flavor DataBase Instance
+  db-instance:
+    type: string
+    description: Name of the MongoDB Instance
+  flavor-app:
+    type: string
+    description: Flavor App Instance
+  app-instance:
+    type: string
+    description: Name of the App Instance - This Instances include Authentiq, Systen Information and Nginx
+
+
+resources:
+  mongodb-instance:
+    type: OS::Nova::Server
+    properties:
+      image: 5172bfe0-17d3-4f83-ae42-feccb5a37fdc
+      flavor: { get_param: flavor-db }
+      name: { get_param: db-instance }
+      key_name: ssh-key
+      networks: [ { network: auth-app, fixed_ip: 192.168.65.15 } ]
+      security_groups: [default]
+
+  osa-apps-group:
+    type: OS::Heat::ResourceGroup
+    properties:
+      count: 3
+      resource_def:
+        type: OS::Nova::Server
+        properties:
+          image: 1bd461fa-8ecf-47c9-8325-693d1f2ddb02
+          flavor: { get_param: flavor-app }
+          name: { get_param: app-instance }
+          key_name: ssh-key
+          networks: [ { network: auth-app } ]
+          security_groups: [default]
+  

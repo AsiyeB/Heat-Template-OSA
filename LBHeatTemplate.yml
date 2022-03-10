@@ -1,0 +1,95 @@
+heat_template_version: 2018-08-31
+
+parameters:
+  loadbalancer-name:
+    type: string
+    description: Name of this Load Balancer
+  loadbalancer-subnet:
+    type: string
+    description: The name or ID of the subnet on which to allocate the VIP address
+  loadbalancerlistener-protocol:
+    type: string
+    description: Protocol on which to listen for the client traffic
+  loadbalancerlistener-protocol-port:
+    type: string
+    description: Protocol Port
+  lb-algorithm: 
+    type: string
+    description: The algorithm used to distribute load between the members of the pool
+  lb-pool-protocol:
+    type: string
+    description: Protocol of the pool
+  pool-member-1-ip:
+    type: string
+    description: IP address of the pool member on the pool network
+  pool-member-1-protocol:
+    type: string
+    description: Port on which the pool member listens for requests or connections
+  pool-member-2-ip:
+    type: string
+    description: IP address of the pool member on the pool network
+  pool-member-2-protocol:
+    type: string
+    description: Port on which the pool member listens for requests or connections
+  pool-member-3-ip:
+    type: string
+    description: IP address of the pool member on the pool network
+  pool-member-3-protocol:
+    type: string
+    description: Port on which the pool member listens for requests or connections
+  health-monitor-type:
+    type: string
+    description: One of predefined health monitor types.
+
+
+resources:
+  LoadBalancer:
+    type: OS::Octavia::LoadBalancer
+    properties:
+      name: { get_param: loadbalancer-name }
+      vip_subnet: { get_param: loadbalancer-subnet }
+
+  LoadBalancerListener:
+    type: OS::Octavia::Listener
+    properties:
+      protocol: { get_param: loadbalancerlistener-protocol }
+      protocol_port: { get_param: loadbalancerlistener-protocol-port }
+      loadbalancer: { get_resource: LoadBalancer }
+
+  LoadBalancerPool:
+    type: OS::Octavia::Pool
+    properties:
+      lb_algorithm: { get_param: lb-algorithm }
+      protocol: { get_param: lb-pool-protocol }
+      loadbalancer: { get_resource: LoadBalancer }
+      listener: { get_resource: LoadBalancerListener }
+
+  LoadBalancerPoolMember1:
+    type: OS::Octavia::PoolMember
+    properties:
+      address: { get_param: pool-member-1-ip }
+      pool: { get_resource: LoadBalancerPool }
+      protocol_port: { get_param: pool-member-1-protocol }
+
+  LoadBalancerPoolMember2:
+    type: OS::Octavia::PoolMember
+    properties:
+      address: { get_param: pool-member-2-ip }
+      pool: { get_resource: LoadBalancerPool }
+      protocol_port: { get_param: pool-member-2-protocol }
+
+  LoadBalancerPoolMember3:
+    type: OS::Octavia::PoolMember
+    properties:
+      address: { get_param: pool-member-3-ip }
+      pool: { get_resource: LoadBalancerPool }
+      protocol_port: { get_param: pool-member-3-protocol }
+
+  HealthMonitor:
+    type: OS::Octavia::HealthMonitor
+    properties:
+      delay: 5
+      max_retries: 3
+      pool: { get_resource: LoadBalancerPool }
+      timeout: 5
+      type: { get_param: health-monitor-type }    
